@@ -2,7 +2,8 @@
 <html>
 	<head>
         <title>Commonality</title>
-        <meta name="viewport" content="initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, user-scalable=no" />
+        
         <meta charset="utf-8">
         
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
@@ -19,10 +20,11 @@
             /* Always set the map height explicitly to define the size of the div
              * element that contains the map. */
             #map {
-                height: calc(100vh - 40px);
+                height: calc(100vh - 48px);
+                top: 48px;
                 width: 100vw;
                 z-index: 0;
-                position: relative;
+                position: absolute;
                 margin: 0;
             }
 
@@ -34,17 +36,11 @@
                 padding-left:8px;
             }
             
-            #new-selection-title {
-                font-size: 32px;
-                color: #777777;
-                background-color: white;
-                font-family: 'Roboto', sans-serif;
-                font-weight: 300;
-                position: relative;
-                text-align: center;
-                width: 50%;
-                left:50%;
-                transform: translate(-50%);
+            #img-search {
+                height: 40px;
+                top:4px;
+                right: 6px;
+                position: absolute;
             }
             
             input {
@@ -54,13 +50,42 @@
                 padding: 6px 8px;
                 margin: 8px;
             }
+            #distanceOptions {
+                font-size:  calc(.70vmin + 8px);
+                font-family: 'Roboto', sans-serif;
+                text-align: center;
+                font-weight: 300;
+                padding: 6px 8px;
+                margin: 8px;
+            }
             #form-conf {
                 position:relative;
                 width: 98%;
             }
-            input[type="address"] {
-                width: 90%;
+            input[type="search"] {
+                font-size:  calc(1vmin + 16px);
+                font-family: 'Roboto', sans-serif;
+                width: 70%;
+                text-align: center;
+                box-sizing: border-box;
+                color: #777777;
+                border-top: none;
+                border-left: none;
+                border-right: none;
+                border-bottom: 1px solid #F39C12;
                 
+                transition: .3s;
+                -webkit-transition: .3s;
+                left: 50%;
+                transform: translateX(-50%);
+                position:relative;
+            }
+            input[type="search"]:focus {
+                width: 72%;
+            }
+            input[type="address"] {
+                width: 93%;
+                font-size:  calc(.75vmin + 8px);
                 box-sizing: border-box;
                 color: #777777;
                 border-top: none;
@@ -76,7 +101,7 @@
             }
             
             input:focus {
-                width: 91%;
+                width: 94%;
             }
             
             
@@ -92,31 +117,25 @@
                 position:relative;
             }
             
-            #lineseparator {
-                width: 75%;
+            .lineseparator {
+                width: 40%;
                 left: 50%;
                 transform: translateX(-50%);
                 color: #777777;
                 height: 0px;
                 margin-top: 16px;
-                margin-bottom: 8px;
+                margin-bottom: 16px;
                 position: relative;
                 border-bottom:1px solid #cccccc;
             }
             
             #selectionContainer {
-                height: 50vh;
+                top: 48px;
                 width: 70%;
                 left: 50%;
+                background-color: white;
                 transform: translateX(-50%);
-                
-                top: calc(100vh - 40px);
                 position: absolute;
-                transition: top .25s;
-            }
-            
-            #selectionContainer:hover {
-                top: calc(50vh);
             }
             
             #contentContainer {
@@ -144,18 +163,10 @@
             
             @media only screen and (max-width: 800px){
                 #selectionContainer {
-                    width: 40px;
-                    height: 40px;
-                    transition: width height .25s;
-                }
-                #selectionContainer:hover {
-                    top: 50vh;
-                    width: 100vw;
-                    height: 50vh;
-                }
-                #new-selection-title {
-                    display:none;
-                    
+                    width: 100%;
+                    height: calc(100vh-48px);
+                    position: absolute;
+                    background-color: white;
                 }
                 
                 #logo-image {
@@ -164,6 +175,17 @@
                     left: 50%;
                     transform: translateX(-50%);
                 }
+                #map {
+                    top: 48px;
+                    height: calc(100vh - 48px);
+                    position: absolute;
+                }
+                input {
+                    font-size: 16px;
+                }
+                input[type="search"] {
+                    width: 100%;
+                }
             }
         </style>
 		
@@ -171,6 +193,7 @@
 	</head>
 	<body>
         <img id="logo-image" src="../resources/logo.png">
+        <img id="img-search" src="../resources/ic_search_black_48dp_2x.png">
         
         <script>
             function initMap() {
@@ -197,20 +220,18 @@
         </script>
         <div id="map"></div>
         
-        <div id="selectionContainer">
-            <div id="new-selection-title">Make a new selection</div>
-            
+        <div id="selectionContainer">        
             <div id="contentContainer">
                 <div class="row" id="pad">
                     <div class="col-md-2"></div>
                     <div class="col-md-8">
                         <form id="form-conf" action="/data/" method="post">
-                            <input type="address" id="addr1" name="addr1" placeholder="What are you looking for?">
+                            <input type="search" id="addr1" name="addr1" placeholder="What are you searching for?">
                         </form>
                     </div>
                     
                 </div>
-                <div id=lineseparator></div>
+                <div class=lineseparator></div>
 
                 <div class="row">
                     <div class="col-md-6">
@@ -222,12 +243,21 @@
                         </form>
                     </div>
                     <div class="col-md-6">
-                        <form id="form-conf" action="/data/" method="post">
-
-                        </form>
+                        <label id="distanceOptions" for="distanceOptions">What's the farthest distance you prefer to go?</label>
+                        <select id="distanceOptions">
+                            <option value="1609.34">1 mile</option>
+                            <option value="3218.69">2 miles</option>
+                            <option value="4828.03">3 miles</option>
+                            <option value="8046.72">5 miles</option>
+                            <option value="16093.4">10 miles</option>
+                            <option value="32186.9">20 miles</option>
+                            <option value="48280.3">30 miles</option>
+                        </select>
                     </div>
+                    
                     <div class="col-md-12">
-                        <p><input type="submit" value="Submit"></p>
+                        <div class=lineseparator></div>
+                        <p><input type="submit" value="Search"></p>
                     </div>
                 </div>
             </div>
@@ -264,11 +294,44 @@
                 }
             })
         }
-        $("#loadButton").click(function(){
-            getClosestData();
-            $('#outputData').html("loading");
-        })
         
+        /*
+            #selectionContainer:hover {
+                top: calc(40vh);
+                animation-play-state:running;
+            }
+*/
+/*
+                #selectionContainer:hover {
+                    top: 48px;
+                    width: 100vw;
+                    height: calc(100%);
+                }
+*/
+        
+        
+        
+        
+        
+        
+//        $("#sidebar-cover").css({
+//            'top': '-100%',
+//             'background': '#8e44ad',
+//        });
+//        
+        
+        
+        $("#img-search").click(function(){
+            $("#selectionContainer").slideToggle();
+        });
+        
+        //compensate for ios shenanigans with scrolling
+        $(document).on("focusout",function(){
+            window.scrollTo(0, 0);
+        });
+        document.ontouchmove = function (e) {
+            e.preventDefault();
+        }
         
     </script>
     
