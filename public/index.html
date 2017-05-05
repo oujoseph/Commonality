@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>Commonality</title>
+        <meta name="viewport" content="initial-scale=1.0">
+        <meta charset="utf-8">
+        
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        
+        <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,200,100' rel='stylesheet' type='text/css'>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+        
+        <style>
+            body{
+                overflow: hidden;
+                padding: 0;
+                margin: 0;
+            }
+            /* Always set the map height explicitly to define the size of the div
+             * element that contains the map. */
+            #map {
+                height: calc(100vh - 40px);
+                width: 100vw;
+                z-index: 0;
+                position: relative;
+                margin: 0;
+            }
+
+            #logo-image {
+                z-index: 1;
+                height: 40px;
+                top: 0;
+                padding-top:8px;
+                padding-left:8px;
+            }
+            
+            #new-selection-title {
+                font-size: 32px;
+                color: #777777;
+                background-color: white;
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+                position: relative;
+                text-align: center;
+                width: 50%;
+                left:50%;
+                transform: translate(-50%);
+            }
+            
+            input {
+                font-size:  calc(.75vmin + 8px);
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+                padding: 6px 8px;
+                margin: 8px;
+            }
+            #form-conf {
+                position:relative;
+                width: 98%;
+            }
+            input[type="address"] {
+                width: 90%;
+                
+                box-sizing: border-box;
+                color: #777777;
+                border-top: none;
+                border-left: none;
+                border-right: none;
+                border-bottom: 1px solid #F39C12;
+                
+                transition: .3s;
+                -webkit-transition: .3s;
+                left: 50%;
+                transform: translateX(-50%);
+                position:relative;
+            }
+            
+            input:focus {
+                width: 91%;
+            }
+            
+            
+            input[type="submit"] {
+                width: 15%;
+                min-width: 150px;
+                box-sizing: border-box;
+                color: #ffffff;
+                background: #F39C12;
+                border:none;
+                left: 50%;
+                transform: translateX(-50%);
+                position:relative;
+            }
+            
+            #lineseparator {
+                width: 75%;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #777777;
+                height: 0px;
+                margin-top: 16px;
+                margin-bottom: 8px;
+                position: relative;
+                border-bottom:1px solid #cccccc;
+            }
+            
+            #selectionContainer {
+                height: 50vh;
+                width: 70%;
+                left: 50%;
+                transform: translateX(-50%);
+                
+                top: calc(100vh - 40px);
+                position: absolute;
+                transition: top .25s;
+            }
+            
+            #selectionContainer:hover {
+                top: calc(50vh);
+            }
+            
+            #contentContainer {
+                background-color: white;
+                height: 100%;
+            }
+            
+            #pad {
+                padding-top: 16px;
+                padding-left: 32px;
+                padding-right: 32px;
+            }
+            
+            #outputData {
+                font-size: 2vmin;
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+            }
+            #outputAddress {
+                font-size: 1.5vmin;
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+                padding: 24px;
+            }
+            
+            @media only screen and (max-width: 800px){
+                #selectionContainer {
+                    width: 40px;
+                    height: 40px;
+                    transition: width height .25s;
+                }
+                #selectionContainer:hover {
+                    top: 50vh;
+                    width: 100vw;
+                    height: 50vh;
+                }
+                #new-selection-title {
+                    display:none;
+                    
+                }
+                
+                #logo-image {
+                    height: 40px;
+                    position: absolute;
+                    left: 50%;
+                    transform: translateX(-50%);
+                }
+            }
+        </style>
+		
+		
+	</head>
+	<body>
+        <img id="logo-image" src="../resources/logo.png">
+        
+        <script>
+            function initMap() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function (position) {
+                        initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                        map.setCenter(initialLocation);
+                     });
+                }
+                    var initCenter = {lat: 122.0322, lng: 37.3230};
+                    var map = new google.maps.Map(document.getElementById('map'), {
+                          zoom: 4,
+                          center: initCenter
+                    });
+                    var marker = new google.maps.Marker({
+                          position: initCenter,
+                          map: map
+                    });
+              }
+        </script>       
+        
+        <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlKLgdoGgTzrXL4-afLhUGjEU3F0SQ-Bw&callback=initMap">
+        </script>
+        <div id="map"></div>
+        
+        <div id="selectionContainer">
+            <div id="new-selection-title">Make a new selection</div>
+            
+            <div id="contentContainer">
+                <div class="row" id="pad">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-8">
+                        <form id="form-conf" action="/data/" method="post">
+                            <input type="address" id="addr1" name="addr1" placeholder="What are you looking for?">
+                        </form>
+                    </div>
+                    
+                </div>
+                <div id=lineseparator></div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <form id="form-conf" action="/data/" method="post">
+                            <input type="address" id="addr1" name="addr1" placeholder="Address 1">
+                            <input type="address" id="addr2" name="addr2" placeholder="Address 2">
+                            <input type="address" id="addr3" name="addr3" placeholder="Address 3">
+                            <input type="address" id="addr4" name="addr4" placeholder="Address 4">
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form id="form-conf" action="/data/" method="post">
+
+                        </form>
+                    </div>
+                    <div class="col-md-12">
+                        <p><input type="submit" value="Submit"></p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        
+        
+	</body>
+    
+    <script>
+        //hijack form submission
+        $("#form-conf").submit(function(e) {
+            e.preventDefault();
+            var postThis = $.post(/addrToBackend/, {
+                addr1: $('#addr1').val(),
+                addr2: $('#addr2').val()
+            });
+        });
+        
+        //get data, pu it into outputData and outputAddress
+        function getClosestData(){
+            $.ajax({
+                url: "/addrToFrontend/",
+                type: "POST",
+                dataType: "json",
+                success: function(data) {
+                    $('#outputData').html("<p>");
+                    currData = JSON.parse(data);
+                    for (var i = 0; i < currData.length; i++){
+                        var j = i+ 1;
+                        $('#outputData').append(("<div id=\"outputData\">" + j + ". " + currData[i].name +"</div>" + "<div id=\"outputAddress\">" + currData[i].address + " <p> Total distance: " + currData[i].distance + "mi") + "</div>" );
+                    }
+                }
+            })
+        }
+        $("#loadButton").click(function(){
+            getClosestData();
+            $('#outputData').html("loading");
+        })
+        
+        
+    </script>
+    
+    
+    
+</html>
