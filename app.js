@@ -4,6 +4,8 @@ var app = express();
 var path = require('path');
 var haversine = require('haversine')
 
+
+
 //bodyparser parses our json file for post and get
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -32,15 +34,22 @@ app.post('/addrToBackend/', function(req, res){
     if (global.postLock === false){
         global.postLock = true;
         setTimeout(undoLock, 5000);
+        var search = req.body.search;
+        var distanceOptions = req.body.distanceOptions;
         var addr1 = req.body.addr1;
         var addr2 = req.body.addr2;
+        var addr3 = req.body.addr3;
+        var addr4 = req.body.addr4;
         var addr = [addr1, addr2];
-
+        
+        console.log([search,distanceOptions,addr1,addr2,addr3,addr4]);
+        
         //rezero the table when new addresses are found
         global.searchResponse = [];
         //rezero the number of addresses being counted
         runSearchCount = 0;
-        parseCoord(addr);
+        
+//        parseCoord(addr);
     }
     res.end();
     

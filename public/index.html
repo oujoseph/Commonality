@@ -50,6 +50,9 @@
                 padding: 6px 8px;
                 margin: 8px;
             }
+            .distance {
+                text-align: center;
+            }
             #distanceOptions {
                 font-size:  calc(.70vmin + 8px);
                 font-family: 'Roboto', sans-serif;
@@ -58,6 +61,14 @@
                 padding: 6px 8px;
                 margin: 8px;
             }
+            
+            #distanceFont {
+                font-size: calc(.7vmin + 8px);
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+                margin: 8px;
+            }
+            
             #form-conf {
                 position:relative;
                 width: 98%;
@@ -65,7 +76,7 @@
             input[type="search"] {
                 font-size:  calc(1vmin + 16px);
                 font-family: 'Roboto', sans-serif;
-                width: 70%;
+                width: 80%;
                 text-align: center;
                 box-sizing: border-box;
                 color: #777777;
@@ -161,14 +172,28 @@
                 padding: 24px;
             }
             
+            #submit {
+                font-size:  calc(1vmin + 16px);
+                font-family: 'Roboto', sans-serif;
+                width: 15%;
+                min-width: 100px;
+                box-sizing: border-box;
+                color: #ffffff;
+                background-color: #F39C12;
+                text-align: center;
+                left: 50%;
+                transform: translateX(-50%);
+                position:relative;
+                margin-bottom: 16px;
+            }
+            
             @media only screen and (max-width: 800px){
                 #selectionContainer {
-                    width: 100%;
+                    width: 100vw;
                     height: calc(100vh-48px);
                     position: absolute;
                     background-color: white;
                 }
-                
                 #logo-image {
                     height: 40px;
                     position: absolute;
@@ -177,14 +202,17 @@
                 }
                 #map {
                     top: 48px;
-                    height: calc(100vh - 48px);
+                    height: calc(95vh - 48px);
                     position: absolute;
                 }
                 input {
                     font-size: 16px;
                 }
                 input[type="search"] {
-                    width: 100%;
+                    width: 90%;
+                }
+                input[type="search"]:focus {
+                    width: 92%;
                 }
             }
         </style>
@@ -192,8 +220,8 @@
 		
 	</head>
 	<body>
-        <img id="logo-image" src="../resources/logo.png">
-        <img id="img-search" src="../resources/ic_search_black_48dp_2x.png">
+        <img id="logo-image" src="resources/logo.png">
+        <img id="img-search" src="resources/ic_search_black_48dp_2x.png">
         
         <script>
             function initMap() {
@@ -226,7 +254,7 @@
                     <div class="col-md-2"></div>
                     <div class="col-md-8">
                         <form id="form-conf" action="/data/" method="post">
-                            <input type="search" id="addr1" name="addr1" placeholder="What are you searching for?">
+                            <input type="search" id="search" name="search" placeholder="What are you searching for?">
                         </form>
                     </div>
                     
@@ -242,8 +270,8 @@
                             <input type="address" id="addr4" name="addr4" placeholder="Address 4">
                         </form>
                     </div>
-                    <div class="col-md-6">
-                        <label id="distanceOptions" for="distanceOptions">What's the farthest distance you prefer to go?</label>
+                    <div class="col-md-6 distance">
+                        <label id="distanceFont" for="distanceOptions">What's the farthest distance you prefer to go?</label>
                         <select id="distanceOptions">
                             <option value="1609.34">1 mile</option>
                             <option value="3218.69">2 miles</option>
@@ -257,7 +285,9 @@
                     
                     <div class="col-md-12">
                         <div class=lineseparator></div>
-                        <p><input type="submit" value="Search"></p>
+                    </div>
+                    <div class="col-md-12">
+                        <div id="submit">Search!</div>
                     </div>
                 </div>
             </div>
@@ -270,11 +300,16 @@
     
     <script>
         //hijack form submission
-        $("#form-conf").submit(function(e) {
+        $("#submit").click(function(e) {
             e.preventDefault();
             var postThis = $.post(/addrToBackend/, {
+                search: $("#search").val(),
+                distanceOptions: document.getElementById("distanceOptions").value,
                 addr1: $('#addr1').val(),
-                addr2: $('#addr2').val()
+                addr2: $('#addr2').val(),
+                addr3: $('#addr3').val(),
+                addr4: $('#addr4').val()
+                
             });
         });
         
