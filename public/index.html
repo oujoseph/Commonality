@@ -72,6 +72,13 @@
             #form-conf {
                 position:relative;
                 width: 98%;
+                max-height: calc(40vh - 56px);
+                overflow-x: hidden;
+            }
+            
+            #search-conf {
+                position:relative;
+                width: 98%;
             }
             input[type="search"] {
                 font-size:  calc(1vmin + 16px);
@@ -172,6 +179,20 @@
                 padding: 24px;
             }
             
+            #add-address{
+                font-size:  calc(.75vmin + 8px);
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+                color: white;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                margin-top: 4px;
+                margin-bottom: 4px;
+                text-align: center;
+                background-color: #F39C12;
+                margin-left: 20%;
+                margin-right: 20%;
+            }
             #submit {
                 font-size:  calc(1vmin + 16px);
                 font-family: 'Roboto', sans-serif;
@@ -231,7 +252,7 @@
                         map.setCenter(initialLocation);
                      });
                 }
-                    var initCenter = {lat: 122.0322, lng: 37.3230};
+                    var initCenter = {lat: 53.2734, lng: -7.778320310000026};
                     var map = new google.maps.Map(document.getElementById('map'), {
                           zoom: 4,
                           center: initCenter
@@ -244,7 +265,7 @@
         </script>       
         
         <script async defer
-            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlKLgdoGgTzrXL4-afLhUGjEU3F0SQ-Bw&callback=initMap">
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBobCvR6fD_t4KwHfSL-EjprfmuYk5QJrw&callback=initMap">
         </script>
         <div id="map"></div>
         
@@ -253,7 +274,7 @@
                 <div class="row" id="pad">
                     <div class="col-md-2"></div>
                     <div class="col-md-8">
-                        <form id="form-conf" action="/data/" method="post">
+                        <form id="search-conf" action="/data/" method="post">
                             <input type="search" id="search" name="search" placeholder="What are you searching for?">
                         </form>
                     </div>
@@ -264,11 +285,9 @@
                 <div class="row">
                     <div class="col-md-6">
                         <form id="form-conf" action="/data/" method="post">
-                            <input type="address" id="addr1" name="addr1" placeholder="Address 1">
-                            <input type="address" id="addr2" name="addr2" placeholder="Address 2">
-                            <input type="address" id="addr3" name="addr3" placeholder="Address 3">
-                            <input type="address" id="addr4" name="addr4" placeholder="Address 4">
+                            <input type="address" placeholder="Your Location">
                         </form>
+                        <div id="add-address">Click to add another address</div>
                     </div>
                     <div class="col-md-6 distance">
                         <label id="distanceFont" for="distanceOptions">What's the farthest distance you prefer to go?</label>
@@ -302,15 +321,24 @@
         //hijack form submission
         $("#submit").click(function(e) {
             e.preventDefault();
+            
+            var data = [];
+            
+            $('#form-conf input').each(function(){
+                data.push(($(this).val()));
+            })
+            
             var postThis = $.post(/addrToBackend/, {
                 search: $("#search").val(),
                 distanceOptions: document.getElementById("distanceOptions").value,
-                addr1: $('#addr1').val(),
-                addr2: $('#addr2').val(),
-                addr3: $('#addr3').val(),
-                addr4: $('#addr4').val()
-                
+                data: {
+                    addr: JSON.stringify(data),
+                }
             });
+        });
+        
+        $('#add-address').click(function() {
+            $('#form-conf').append("<input type=\"address\" placeholder=\"Your friend's location\">");
         });
         
         //get data, pu it into outputData and outputAddress
@@ -320,12 +348,13 @@
                 type: "POST",
                 dataType: "json",
                 success: function(data) {
-                    $('#outputData').html("<p>");
-                    currData = JSON.parse(data);
-                    for (var i = 0; i < currData.length; i++){
-                        var j = i+ 1;
-                        $('#outputData').append(("<div id=\"outputData\">" + j + ". " + currData[i].name +"</div>" + "<div id=\"outputAddress\">" + currData[i].address + " <p> Total distance: " + currData[i].distance + "mi") + "</div>" );
-                    }
+                    alert(data);
+//                    $('#outputData').html("<p>");
+//                    currData = JSON.parse(data);
+//                    for (var i = 0; i < currData.length; i++){
+//                        var j = i+ 1;
+//                        $('#outputData').append(("<div id=\"outputData\">" + j + ". " + currData[i].name +"</div>" + "<div id=\"outputAddress\">" + currData[i].address + " <p> Total distance: " + currData[i].distance + "mi") + "</div>" );
+//                    }
                 }
             })
         }

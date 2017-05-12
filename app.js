@@ -23,41 +23,27 @@ searchResponse = [];
 
 coordinateAddress = [];
 
-postLock = false;
 
 app.post('/addrToBackend/', function(req, res){
-    console.log("postLock: " + postLock);
     
-    //have a rudimentary time lock to prevent new data from mixing with 
-    //current data if someone clicks "submit" too fast
-    //google maps api takes a while to update new posttokens
-    if (global.postLock === false){
-        global.postLock = true;
-        setTimeout(undoLock, 5000);
-        var search = req.body.search;
-        var distanceOptions = req.body.distanceOptions;
-        var addr1 = req.body.addr1;
-        var addr2 = req.body.addr2;
-        var addr3 = req.body.addr3;
-        var addr4 = req.body.addr4;
-        var addr = [addr1, addr2];
-        
-        console.log([search,distanceOptions,addr1,addr2,addr3,addr4]);
-        
-        //rezero the table when new addresses are found
-        global.searchResponse = [];
-        //rezero the number of addresses being counted
-        runSearchCount = 0;
+    var search = req.body.search;
+    var distanceOptions = req.body.distanceOptions;
+    var addr1 = req.body.data.addr1;
+    var addr2 = req.body.data.addr2;
+    var data = req.body.data;
+    var addr = [addr1, addr2];
+
+    console.log([search,distanceOptions,data]);
+
+    //rezero the table when new addresses are found
+    global.searchResponse = [];
+    //rezero the number of addresses being counted
+    runSearchCount = 0;
         
 //        parseCoord(addr);
-    }
     res.end();
     
 });
-
-function undoLock(){
-    global.postLock = false;
-}
 
 app.post('/addrToFrontend/', function(req, res){
     res.type('text/plain');
@@ -73,7 +59,7 @@ app.listen(8081, function () {
 })
 
 var googleMapsClient = require('@google/maps').createClient({
-  key: 'AIzaSyBlKLgdoGgTzrXL4-afLhUGjEU3F0SQ-Bw'
+  key: 'AIzaSyBobCvR6fD_t4KwHfSL-EjprfmuYk5QJrw'
 });
 
 
