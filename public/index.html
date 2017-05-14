@@ -321,6 +321,7 @@
         var ws = new WebSocket('ws://localhost:9000');
         
         ws.onopen = function() {
+            console.alert("connected to backend");
           // Web Socket is connected, send data using send()
 //            ws.send(Math.floor(Math.random() * 10000000000000001));
 //            window.alert("connected to server. sending a crappy pseudorandom ID");
@@ -354,7 +355,7 @@
         //hijack form submission
         $("#submit").click(function(e) {
             e.preventDefault();
-            
+            $("#selectionContainer").slideToggle();
             var data = [];
             
             $('#form-conf input').each(function(){

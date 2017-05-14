@@ -11,6 +11,7 @@ var clientCount = 0;
 
 const wss = new WebSocket.Server({
     perMessageDeflate: false,
+    port: 9000
 });
 
 //AWS Elastic Beanstalk defaults to port 8081 when using node.js
@@ -18,6 +19,7 @@ app.listen(8081, function () {
     console.log('running index.html');
 })
 
+app.use(express.static(__dirname + '/public'));
 
 wss.on('connection', function connection(ws) {
     console.log("New client connected");
