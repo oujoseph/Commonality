@@ -245,6 +245,7 @@
         <img id="img-search" src="resources/ic_search_black_48dp_2x.png">
         
         <script>
+            var map;
             function initMap() {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(function (position) {
@@ -253,14 +254,11 @@
                      });
                 }
                     var initCenter = {lat: 53.2734, lng: -7.778320310000026};
-                    var map = new google.maps.Map(document.getElementById('map'), {
+                    map = new google.maps.Map(document.getElementById('map'), {
                           zoom: 4,
                           center: initCenter
                     });
-                    var marker = new google.maps.Marker({
-                          position: initCenter,
-                          map: map
-                    });
+                    
               }
         </script>       
         
@@ -284,11 +282,12 @@
 
                 <div class="row">
                     <div class="col-md-6">
-                        <form id="form-conf" action="/data/" method="post">
+                        <form id="form-conf" action="/data/" method="post" onsubmit="false">
                             <input type="address" placeholder="Your Location">
                         </form>
                         <div id="add-address">Click to add another address</div>
                     </div>
+                    
                     <div class="col-md-6 distance">
                         <label id="distanceFont" for="distanceOptions">What's the farthest distance you prefer to go?</label>
                         <select id="distanceOptions">
@@ -305,6 +304,7 @@
                     <div class="col-md-12">
                         <div class=lineseparator></div>
                     </div>
+                    
                     <div class="col-md-12">
                         <div id="submit">Search!</div>
                     </div>
@@ -318,6 +318,39 @@
 	</body>
     
     <script>
+        var ws = new WebSocket('ws://localhost:9000');
+        
+        ws.onopen = function() {
+          // Web Socket is connected, send data using send()
+//            ws.send(Math.floor(Math.random() * 10000000000000001));
+//            window.alert("connected to server. sending a crappy pseudorandom ID");
+        };
+        
+        ws.onmessage = function(evt){
+            var decodeData = JSON.parse(evt.data);
+            
+            for(var i = 0; i < decodeData.length; i++){
+                var currLatLng = {lat: decodeData[i].coordinates.lat, lng: decodeData[i].coordinates.lng};
+                
+                
+                
+                var marker = new google.maps.Marker({
+                      position: currLatLng,
+                      map: map
+                });
+                
+                marker.setMap(map);
+            }
+        }
+        
+        $("#form-conf").submit(function(e) {
+            e.preventDefault();
+        });
+        
+        $("#search-conf").submit(function(e) {
+            e.preventDefault();
+        });
+
         //hijack form submission
         $("#submit").click(function(e) {
             e.preventDefault();
@@ -328,62 +361,29 @@
                 data.push(($(this).val()));
             })
             
-            var postThis = $.post(/addrToBackend/, {
+            ws.send(JSON.stringify({
                 search: $("#search").val(),
                 distanceOptions: document.getElementById("distanceOptions").value,
                 data: {
                     addr: JSON.stringify(data),
                 }
-            });
+            }));
+            
+            
+//            var postThis = $.post(/addrToBackend/, {
+//                search: $("#search").val(),
+//                distanceOptions: document.getElementById("distanceOptions").value,
+//                data: {
+//                    addr: JSON.stringify(data),
+//                }
+//            });
         });
         
         $('#add-address').click(function() {
             $('#form-conf').append("<input type=\"address\" placeholder=\"Your friend's location\">");
         });
         
-        //get data, pu it into outputData and outputAddress
-        function getClosestData(){
-            $.ajax({
-                url: "/addrToFrontend/",
-                type: "POST",
-                dataType: "json",
-                success: function(data) {
-                    alert(data);
-//                    $('#outputData').html("<p>");
-//                    currData = JSON.parse(data);
-//                    for (var i = 0; i < currData.length; i++){
-//                        var j = i+ 1;
-//                        $('#outputData').append(("<div id=\"outputData\">" + j + ". " + currData[i].name +"</div>" + "<div id=\"outputAddress\">" + currData[i].address + " <p> Total distance: " + currData[i].distance + "mi") + "</div>" );
-//                    }
-                }
-            })
-        }
-        
-        /*
-            #selectionContainer:hover {
-                top: calc(40vh);
-                animation-play-state:running;
-            }
-*/
-/*
-                #selectionContainer:hover {
-                    top: 48px;
-                    width: 100vw;
-                    height: calc(100%);
-                }
-*/
-        
-        
-        
-        
-        
-        
-//        $("#sidebar-cover").css({
-//            'top': '-100%',
-//             'background': '#8e44ad',
-//        });
-//        
-        
+
         
         $("#img-search").click(function(){
             $("#selectionContainer").slideToggle();

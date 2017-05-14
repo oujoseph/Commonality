@@ -1,17 +1,28 @@
 {
-  "name": "nodeJS",
+  "name": "commonality",
   "version": "1.0.0",
-  "description": "N/A",
-  "main": "index.js",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "haversine": "^1.0.2",
+    "@google/maps": "^0.3.1",
+    "ws": "^2.3.1"
+  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oujoseph/Commonality.git"
+  },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "body-parser": "^1.17.1",
-    "express": "^4.15.2",
-    "express-session": "^1.15.2"
-  }
+  "bugs": {
+    "url": "https://github.com/oujoseph/Commonality/issues"
+  },
+  "homepage": "https://github.com/oujoseph/Commonality#readme"
 }

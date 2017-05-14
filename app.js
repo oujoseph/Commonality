@@ -3,8 +3,51 @@ var bodyParser = require('body-parser');
 var app = express();
 var path = require('path');
 var haversine = require('haversine')
-var request = require('request');
+var WebSocket = require('ws');
 
+//stores a list of all clients' unique ids, linked to ws instance
+var CLIENTS={};
+var clientCount = 0;
+
+const wss = new WebSocket.Server({
+    perMessageDeflate: false,
+});
+
+//AWS Elastic Beanstalk defaults to port 8081 when using node.js
+app.listen(8081, function () {
+    console.log('running index.html');
+})
+
+
+wss.on('connection', function connection(ws) {
+    console.log("New client connected");
+    ws.id = clientCount++;
+    CLIENTS[ws.id] = ws;
+    console.log("CLIENTS[ws.id] added: " + CLIENTS[ws.id]);
+    
+    ws.on('message', function incoming(message) {
+        console.log('received: %s', message);
+        
+        var msgData = JSON.parse(message);
+        var search = msgData.search;
+        var distanceOptions = parseFloat(msgData.distanceOptions);
+        var data = JSON.parse(msgData.data.addr);
+
+        console.log([search,distanceOptions,data]);
+
+        //rezero the table when new addresses are found
+        global.searchResponse = [];
+        //rezero the number of addresses being counted
+        runSearchCount = 0;
+
+        parseCoord(data,search,distanceOptions,ws.id);
+    });
+});
+
+wss.on('close', function close() {
+    console.log('a client has disconnected');
+    delete CLIENTS[ws.id];
+});
 
 //bodyparser parses our json file for post and get
 app.use(bodyParser.json());
@@ -24,100 +67,68 @@ searchResponse = [];
 coordinateAddress = [];
 
 
-app.post('/addrToBackend/', function(req, res){
-    
-    var search = req.body.search;
-    var distanceOptions = parseFloat(req.body.distanceOptions);
-    var data = JSON.parse(req.body.data.addr);
-
-    console.log([search,distanceOptions,data]);
-
-    //rezero the table when new addresses are found
-    global.searchResponse = [];
-    //rezero the number of addresses being counted
-    runSearchCount = 0;
-        
-    parseCoord(data,search,distanceOptions);
-    res.end();
-    
-});
-
-
-app.post('/addrToFrontend/', function(req, res){
-    res.type('text/plain');
-    res.json(JSON.stringify(global.searchResponse));
-    res.end();
-    console.log("Posting to frontend");
-//    console.log(JSON.stringify(global.searchResponse));
-});
-
-//AWS Elastic Beanstalk defaults to port 8081 when using node.js
-app.listen(8081, function () {
-    console.log('running index.html');
-})
-
 var googleMapsClient = require('@google/maps').createClient({
   key: 'AIzaSyBwQXLLkxWCyoOUfwMRVkfsk6lECoFmNFk'
 });
 
 
-//this function gets distances of each element from each address
-function runSort(){
-    console.log("in runsort()");
-    var distancedResponse = [];
-
-    // for(var i = 0; i < global.coordinateAddress.length; i++){
-        console.log(global.coordinateAddress.length);
-        console.log(global.coordinateAddress);
-    // }
-
-
-
-
-
-
-    //uses Haversine formula by niix to calculate distance from each input address to each google address
-//    haversine(start, end, {unit: 'mile'});
-    var addr1 = {
-        latitude: global.coordinateAddress[0][0],
-        longitude: global.coordinateAddress[0][1]
-    }
-    var addr2 = {
-        latitude: global.coordinateAddress[1][0],
-        longitude: global.coordinateAddress[1][1]
-    }
-        
-    for(var i = 0; i < global.searchResponse.length; i++){
-        var addr = {
-            latitude: global.searchResponse[i].coordinates.lat,
-            longitude: global.searchResponse[i].coordinates.lng
-        }
-        
-        //get total distance
-        var distance = haversine(addr1, addr, {unit: 'mile'});
-        var distance2 = haversine(addr2, addr, {unit: 'mile'});
-        //omit selections with distances farther than 10miles
-        var combinedDistance = distance + distance2;
-        if (distance <= 10.0 || distance2 <= 10.0){
-            distancedResponse.push({
-                name: global.searchResponse[i].name,
-                address: global.searchResponse[i].address,
-                distance: combinedDistance
-            });
-        }
-        // console.log(distancedResponse);
-    }
-    
-    console.log("Performing sorting by distance");
-    //set searchResponse to be distancedResponse
-    global.searchResponse = distancedResponse;
-    
-    global.searchResponse.sort(function(a,b){
-        if (a.distance < b.distance)return -1;
-        if (a.distance > b.distance)return 1;
-    });
-    console.log("All Operations Complete.");
-}
+////this function gets distances of each element from each address
+//function runSort(){
+//    console.log("in runsort()");
+//    var distancedResponse = [];
+//
+//    // for(var i = 0; i < global.coordinateAddress.length; i++){
+//        console.log(global.coordinateAddress.length);
+//        console.log(global.coordinateAddress);
+//    // }
+//
+//
+//
+//
+//
+//
+//    //uses Haversine formula by niix to calculate distance from each input address to each google address
+////    haversine(start, end, {unit: 'mile'});
+//    var addr1 = {
+//        latitude: global.coordinateAddress[0][0],
+//        longitude: global.coordinateAddress[0][1]
+//    }
+//    var addr2 = {
+//        latitude: global.coordinateAddress[1][0],
+//        longitude: global.coordinateAddress[1][1]
+//    }
+//        
+//    for(var i = 0; i < global.searchResponse.length; i++){
+//        var addr = {
+//            latitude: global.searchResponse[i].coordinates.lat,
+//            longitude: global.searchResponse[i].coordinates.lng
+//        }
+//        
+//        //get total distance
+//        var distance = haversine(addr1, addr, {unit: 'mile'});
+//        var distance2 = haversine(addr2, addr, {unit: 'mile'});
+//        //omit selections with distances farther than 10miles
+//        var combinedDistance = distance + distance2;
+//        if (distance <= 10.0 || distance2 <= 10.0){
+//            distancedResponse.push({
+//                name: global.searchResponse[i].name,
+//                address: global.searchResponse[i].address,
+//                distance: combinedDistance
+//            });
+//        }
+//        // console.log(distancedResponse);
+//    }
+//    
+//    console.log("Performing sorting by distance");
+//    //set searchResponse to be distancedResponse
+//    global.searchResponse = distancedResponse;
+//    
+//    global.searchResponse.sort(function(a,b){
+//        if (a.distance < b.distance)return -1;
+//        if (a.distance > b.distance)return 1;
+//    });
+//    console.log("All Operations Complete.");
+//}
 
 
 function pushResponseToArray(results){
@@ -134,15 +145,15 @@ function pushResponseToArray(results){
     }
 }
 
-function removeNonDupes(){
+function removeNonDupes(uID){
     console.log("removing all dupes");
     var prunedResponse = [];
     
     
     //sort the two concatenated arrays
     global.searchResponse.sort(function(a,b){
-        if (a.address < b.address)return -1;
-        if (a.address > b.address)return 1;
+        if (a.name < b.name)return -1;
+        if (a.name > b.name)return 1;
     });
     
     for (var i = 1; i < global.searchResponse.length; i++){
@@ -159,21 +170,24 @@ function removeNonDupes(){
     for(var i = 0; i < global.searchResponse.length; i++){
         console.log(global.searchResponse[i].name);
     }
+    
+    console.log("sending pruned data to client");
+    CLIENTS[uID].send(JSON.stringify(global.searchResponse));
 }
 
 //checks for when the search has been completed, and then runs removeNonDupes();
-function checkAndExecuteSort(addrCount){
+function checkAndExecuteSort(addrCount, uID){
     runSearchCount++;
     console.log("in checkandexecutesort");
     if (runSearchCount == addrCount){
         runSearchCount = 0;
         console.log("final iteration, running removeNonDupes");
-        removeNonDupes();
+        removeNonDupes(uID);
     }
 }
 
 //runs google maps api's geocode function to grab the coordinates
-function runSearch(addr, search, distanceOptions, addrCount){
+function runSearch(addr, search, distanceOptions, addrCount, uID){
     //note: depending on keyword, the returned results may change slightly.
     //also, due to the 60 result limit, if more than 60 hits exist
     //possible candidates on the list will be truncated and the end result
@@ -192,7 +206,7 @@ function runSearch(addr, search, distanceOptions, addrCount){
             if (!err) {
                 console.log("success in retrieving data from googlemapsclient");
                 
-                pushResponseToArray(response.json.results);
+                pushResponseToArray(response.json.results, uID);
                 if (response.json.next_page_token != null){
                     // console.log("starting recursesearch");
                     //must wait for google's servers to update its pagetokens
@@ -200,14 +214,14 @@ function runSearch(addr, search, distanceOptions, addrCount){
                     //results
                     // setTimeout(function(){recurseSearch(addr, response.json.next_page_token);}, 2000);
                 }
-                checkAndExecuteSort(addrCount);
+                checkAndExecuteSort(addrCount, uID);
                 
             }
         }
     )
 }
 
-function parseCoord(data, search, distanceOptions){
+function parseCoord(data, search, distanceOptions, uID){
     
     console.log("passing in data: " + data);
     // Geocode the two addresses.
@@ -228,7 +242,7 @@ function parseCoord(data, search, distanceOptions){
                 //it needs-- else, addr1Coord may be undefined at run time
 
 
-                runSearch(addrCoord, search, distanceOptions, data.length);
+                runSearch(addrCoord, search, distanceOptions, data.length, uID);
             } else console.log("FAILURE to retrieve google maps data in parseCoord()");
         });
     }
