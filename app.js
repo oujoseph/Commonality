@@ -2,7 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
 var path = require('path');
-var haversine = require('haversine')
+var haversine = require('haversine');
 var WebSocket = require('ws');
 
 //stores a list of all clients' unique ids, linked to ws instance
@@ -80,7 +80,7 @@ var googleMapsClient = require('@google/maps').createClient({
 
 
 ////this function gets distances of each element from each address
-//function runSort(){
+//function runSort(uID){
 //    console.log("in runsort()");
 //    var distancedResponse = [];
 //
@@ -137,7 +137,6 @@ var googleMapsClient = require('@google/maps').createClient({
 //    console.log("All Operations Complete.");
 //}
 
-
 function pushResponseToArray(results, uID){
     console.log("in pushResponseToArray");
     for(var i = 0; i < results.length; i++){
@@ -180,7 +179,7 @@ function removeNonDupes(uID){
     }
     
     console.log("sending pruned data to client");
-    CLIENTS[uID][0].send(JSON.stringify(CLIENTS[uID][2]));
+    CLIENTS[uID][0].send(JSON.stringify([CLIENTS[uID][2], CLIENTS[uID][1]]));
 }
 
 //checks for when the search has been completed, and then runs removeNonDupes();
@@ -220,11 +219,56 @@ function runSearch(addr, search, distanceOptions, addrCount, uID){
                     //must wait for google's servers to update its pagetokens
                     //2 sec appears to be the threshold. 1.5sec wait results in inconsistent
                     //results
-                    // setTimeout(function(){recurseSearch(addr, response.json.next_page_token);}, 2000);
+                    setTimeout(function(){runSearch2(addr, search, distanceOptions, addrCount, uID, response.json.next_page_token);}, 2000);
                 }
+            }
+        }
+    )
+}
+
+function runSearch2(addr, search, distanceOptions, addrCount, uID, ptoken){
+    console.log("in runSearch2()");
+
+    googleMapsClient.placesNearby(
+        {
+            location: addr,
+            radius: distanceOptions,
+            keyword: search,
+            pagetoken: ptoken
+        },
+        function(err, response) {
+            if (!err) {
+                console.log("success in retrieving data from googlemapsclient");
+                
+                pushResponseToArray(response.json.results, uID);
+                if (response.json.next_page_token != null){
+                    setTimeout(function(){runSearch3(addr, search, distanceOptions, addrCount, uID, response.json.next_page_token);}, 2000);
+                }
+                
+            }
+        }
+    )
+}
+
+function runSearch3(addr, search, distanceOptions, addrCount, uID, ptoken){
+    console.log("in runSearch3()");
+
+    googleMapsClient.placesNearby(
+        {
+            location: addr,
+            radius: distanceOptions,
+            keyword: search,
+            pagetoken: ptoken
+        },
+        function(err, response) {
+            if (!err) {
+                console.log("success in retrieving data from googlemapsclient");
+                
+                pushResponseToArray(response.json.results, uID);
                 checkAndExecuteSort(addrCount, uID);
                 
             }
+            
         }
     )
 }
