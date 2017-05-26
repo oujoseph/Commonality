@@ -24,7 +24,10 @@ app.use(express.static(__dirname + '/public'));
 wss.on('connection', function connection(ws) {
     console.log("New client connected");
     ws.id = clientCount++;
-    CLIENTS[ws.id] = ws;
+    //index 1 of every element in CLIENTS contains data
+    CLIENTS[ws.id] = [ws, "", ""];
+    // index 1 is address, index 2 is data
+    
     console.log("CLIENTS[ws.id] added: " + CLIENTS[ws.id]);
     
     ws.on('message', function incoming(message) {
@@ -38,7 +41,9 @@ wss.on('connection', function connection(ws) {
         console.log([search,distanceOptions,data]);
 
         //rezero the table when new addresses are found
-        global.searchResponse = [];
+//        CLIENTS[uID][2] = [];
+        CLIENTS[ws.id][2] = [];
+        CLIENTS[ws.id][1] = [];
         //rezero the number of addresses being counted
         runSearchCount = 0;
 
@@ -79,9 +84,9 @@ var googleMapsClient = require('@google/maps').createClient({
 //    console.log("in runsort()");
 //    var distancedResponse = [];
 //
-//    // for(var i = 0; i < global.coordinateAddress.length; i++){
-//        console.log(global.coordinateAddress.length);
-//        console.log(global.coordinateAddress);
+//    // for(var i = 0; i < CLIENTS[uID][1].length; i++){
+//        console.log(CLIENTS[uID][1].length);
+//        console.log(CLIENTS[uID][1]);
 //    // }
 //
 //
@@ -92,18 +97,18 @@ var googleMapsClient = require('@google/maps').createClient({
 //    //uses Haversine formula by niix to calculate distance from each input address to each google address
 ////    haversine(start, end, {unit: 'mile'});
 //    var addr1 = {
-//        latitude: global.coordinateAddress[0][0],
-//        longitude: global.coordinateAddress[0][1]
+//        latitude: CLIENTS[uID][1][0][0],
+//        longitude: CLIENTS[uID][1][0][1]
 //    }
 //    var addr2 = {
-//        latitude: global.coordinateAddress[1][0],
-//        longitude: global.coordinateAddress[1][1]
+//        latitude: CLIENTS[uID][1][1][0],
+//        longitude: CLIENTS[uID][1][1][1]
 //    }
 //        
-//    for(var i = 0; i < global.searchResponse.length; i++){
+//    for(var i = 0; i < CLIENTS[uID][2].length; i++){
 //        var addr = {
-//            latitude: global.searchResponse[i].coordinates.lat,
-//            longitude: global.searchResponse[i].coordinates.lng
+//            latitude: CLIENTS[uID][2][i].coordinates.lat,
+//            longitude: CLIENTS[uID][2][i].coordinates.lng
 //        }
 //        
 //        //get total distance
@@ -113,8 +118,8 @@ var googleMapsClient = require('@google/maps').createClient({
 //        var combinedDistance = distance + distance2;
 //        if (distance <= 10.0 || distance2 <= 10.0){
 //            distancedResponse.push({
-//                name: global.searchResponse[i].name,
-//                address: global.searchResponse[i].address,
+//                name: CLIENTS[uID][2][i].name,
+//                address: CLIENTS[uID][2][i].address,
 //                distance: combinedDistance
 //            });
 //        }
@@ -123,9 +128,9 @@ var googleMapsClient = require('@google/maps').createClient({
 //    
 //    console.log("Performing sorting by distance");
 //    //set searchResponse to be distancedResponse
-//    global.searchResponse = distancedResponse;
+//    CLIENTS[uID][2] = distancedResponse;
 //    
-//    global.searchResponse.sort(function(a,b){
+//    CLIENTS[uID][2].sort(function(a,b){
 //        if (a.distance < b.distance)return -1;
 //        if (a.distance > b.distance)return 1;
 //    });
@@ -133,7 +138,7 @@ var googleMapsClient = require('@google/maps').createClient({
 //}
 
 
-function pushResponseToArray(results){
+function pushResponseToArray(results, uID){
     console.log("in pushResponseToArray");
     for(var i = 0; i < results.length; i++){
         var elementName = results[i].name;
@@ -142,9 +147,10 @@ function pushResponseToArray(results){
         var placeData = results[i].placeID;
         var rating = results[i].rating;
         var price = results[i].price_level;
-        global.searchResponse.push({name: elementName, address: textAddress, coordinates: geoAddress,
+        CLIENTS[uID][2].push({name: elementName, address: textAddress, coordinates: geoAddress,
              placeID: placeData, rating: rating, price: price});
     }
+    console.log("pushed data");
 }
 
 function removeNonDupes(uID){
@@ -153,28 +159,28 @@ function removeNonDupes(uID){
     
     
     //sort the two concatenated arrays
-    global.searchResponse.sort(function(a,b){
+    CLIENTS[uID][2].sort(function(a,b){
         if (a.name < b.name)return -1;
         if (a.name > b.name)return 1;
     });
     
-    for (var i = 1; i < global.searchResponse.length; i++){
+    for (var i = 1; i < CLIENTS[uID][2].length; i++){
         //each pair is now together, so compare curr to curr-1. if the same, push to new array
-        if (global.searchResponse[i].address != global.searchResponse[i-1].address){
-            if (global.searchResponse[i].name != global.searchResponse[i-1].name){
-                prunedResponse.push(global.searchResponse[i]);
+        if (CLIENTS[uID][2][i].address != CLIENTS[uID][2][i-1].address){
+            if (CLIENTS[uID][2][i].name != CLIENTS[uID][2][i-1].name){
+                prunedResponse.push(CLIENTS[uID][2][i]);
             }
         }
     }
 
-    global.searchResponse = prunedResponse;
+    CLIENTS[uID][2] = prunedResponse;
     console.log("removed all dupes");
-    for(var i = 0; i < global.searchResponse.length; i++){
-        console.log(global.searchResponse[i].name);
+    for(var i = 0; i < CLIENTS[uID][2].length; i++){
+        console.log(CLIENTS[uID][2][i].name);
     }
     
     console.log("sending pruned data to client");
-    CLIENTS[uID].send(JSON.stringify(global.searchResponse));
+    CLIENTS[uID][0].send(JSON.stringify(CLIENTS[uID][2]));
 }
 
 //checks for when the search has been completed, and then runs removeNonDupes();
@@ -237,7 +243,7 @@ function parseCoord(data, search, distanceOptions, uID){
                 var addrCoordTemp = response.json.results[0].geometry.location;
                 // console.log("processing addr coordinates");
                 var addrCoord = [addrCoordTemp.lat, addrCoordTemp.lng];
-                global.coordinateAddress.push(addrCoord);
+                CLIENTS[uID][1].push(addrCoord);
                 //nesting placesNearby inside geocode to effectively render this
                 //to run sequentially as opposed to asynchronously.
                 //this is done to guarantee placesNearby has the geocode
