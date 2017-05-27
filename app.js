@@ -31,23 +31,30 @@ wss.on('connection', function connection(ws) {
     console.log("CLIENTS[ws.id] added: " + CLIENTS[ws.id]);
     
     ws.on('message', function incoming(message) {
-        console.log('received: %s', message);
+//        throw error if bad message
+        try {
+            console.log('received: %s', message);
+            
+            var msgData = JSON.parse(message);
+            var search = msgData.search;
+            var distanceOptions = parseFloat(msgData.distanceOptions);
+            var data = JSON.parse(msgData.data.addr);
+            var longToggle = JSON.parse(msgData.longToggle);
+            console.log([search,distanceOptions,data, longToggle]);
+
+            //rezero the table when new addresses are found
+    //        CLIENTS[uID][2] = [];
+            CLIENTS[ws.id][2] = [];
+            CLIENTS[ws.id][1] = [];
+            //rezero the number of addresses being counted
+            runSearchCount = 0;
+
+            parseCoord(data,search,distanceOptions,ws.id,longToggle);
+        }
+        catch(err) {
+            console.log(err);
+        }
         
-        var msgData = JSON.parse(message);
-        var search = msgData.search;
-        var distanceOptions = parseFloat(msgData.distanceOptions);
-        var data = JSON.parse(msgData.data.addr);
-
-        console.log([search,distanceOptions,data]);
-
-        //rezero the table when new addresses are found
-//        CLIENTS[uID][2] = [];
-        CLIENTS[ws.id][2] = [];
-        CLIENTS[ws.id][1] = [];
-        //rezero the number of addresses being counted
-        runSearchCount = 0;
-
-        parseCoord(data,search,distanceOptions,ws.id);
     });
 });
 
@@ -79,63 +86,62 @@ var googleMapsClient = require('@google/maps').createClient({
 });
 
 
-////this function gets distances of each element from each address
-//function runSort(uID){
-//    console.log("in runsort()");
-//    var distancedResponse = [];
-//
-//    // for(var i = 0; i < CLIENTS[uID][1].length; i++){
-//        console.log(CLIENTS[uID][1].length);
-//        console.log(CLIENTS[uID][1]);
-//    // }
-//
-//
-//
-//
-//
-//
-//    //uses Haversine formula by niix to calculate distance from each input address to each google address
-////    haversine(start, end, {unit: 'mile'});
-//    var addr1 = {
-//        latitude: CLIENTS[uID][1][0][0],
-//        longitude: CLIENTS[uID][1][0][1]
-//    }
-//    var addr2 = {
-//        latitude: CLIENTS[uID][1][1][0],
-//        longitude: CLIENTS[uID][1][1][1]
-//    }
-//        
-//    for(var i = 0; i < CLIENTS[uID][2].length; i++){
-//        var addr = {
-//            latitude: CLIENTS[uID][2][i].coordinates.lat,
-//            longitude: CLIENTS[uID][2][i].coordinates.lng
-//        }
-//        
-//        //get total distance
-//        var distance = haversine(addr1, addr, {unit: 'mile'});
-//        var distance2 = haversine(addr2, addr, {unit: 'mile'});
-//        //omit selections with distances farther than 10miles
-//        var combinedDistance = distance + distance2;
-//        if (distance <= 10.0 || distance2 <= 10.0){
-//            distancedResponse.push({
-//                name: CLIENTS[uID][2][i].name,
-//                address: CLIENTS[uID][2][i].address,
-//                distance: combinedDistance
-//            });
-//        }
-//        // console.log(distancedResponse);
-//    }
-//    
-//    console.log("Performing sorting by distance");
-//    //set searchResponse to be distancedResponse
-//    CLIENTS[uID][2] = distancedResponse;
-//    
-//    CLIENTS[uID][2].sort(function(a,b){
-//        if (a.distance < b.distance)return -1;
-//        if (a.distance > b.distance)return 1;
-//    });
-//    console.log("All Operations Complete.");
-//}
+//this function gets distances of each element from each address
+function runSort(uID, distanceOptions){
+    console.log("in runsort()");
+    var distancedResponse = [];
+    console.log("number of addresses: " + CLIENTS[uID][1].length);
+
+//    too many nested arrays. data format is this:
+//    CLIENTS -> uID -> address list -> lat = 0, lon = 2
+//    for every user's address, compute distance to each returned data point
+//    for (var i = 0; i < CLIENTS[uID][1].length; i++){
+        
+        
+    for (var j = 0; j < CLIENTS[uID][2].length; j++){
+        var addr = {
+            latitude: CLIENTS[uID][2][j].coordinates.lat,
+            longitude: CLIENTS[uID][2][j].coordinates.lng
+        }
+        console.log("addr: " + addr.latitude + " " + addr.longitude);
+
+
+
+
+        var distLimit = 0;
+//            for every returned address, compute distance to every user address
+        //if past the limit for any, don't push.
+        for (var i = 0; i < CLIENTS[uID][1].length; i++){
+
+            //for every result, get a distance to every client. if over distanceoptions, discard.
+            var currAddr = {
+                latitude: CLIENTS[uID][1][i][0],
+                longitude: CLIENTS[uID][1][i][1],
+            }
+            console.log("currAddr: " + currAddr.latitude + " " + currAddr.longitude);
+            console.log("number of results: " + CLIENTS[uID][2].length);
+
+
+            var distance = haversine(currAddr, addr, {unit: 'meter'});
+            console.log("distance: " + distance);
+            if (distance > distanceOptions)distLimit++;
+        }
+        if (distLimit == 0)distancedResponse.push(CLIENTS[uID][2][j]);
+    }
+
+    CLIENTS[uID][2] = distancedResponse;
+    CLIENTS[uID][0].send(JSON.stringify([CLIENTS[uID][2], CLIENTS[uID][1]]));
+    
+    console.log("Performing sorting by distance");
+    //set searchResponse to be distancedResponse
+    CLIENTS[uID][2] = distancedResponse;
+    
+    CLIENTS[uID][2].sort(function(a,b){
+        if (a.distance < b.distance)return -1;
+        if (a.distance > b.distance)return 1;
+    });
+    console.log("All Operations Complete.");
+}
 
 function pushResponseToArray(results, uID){
     console.log("in pushResponseToArray");
@@ -152,7 +158,7 @@ function pushResponseToArray(results, uID){
     console.log("pushed data");
 }
 
-function removeNonDupes(uID){
+function removeNonDupes(uID, distanceOptions){
     console.log("removing all dupes");
     var prunedResponse = [];
     
@@ -179,22 +185,23 @@ function removeNonDupes(uID){
     }
     
     console.log("sending pruned data to client");
-    CLIENTS[uID][0].send(JSON.stringify([CLIENTS[uID][2], CLIENTS[uID][1]]));
+    runSort(uID, distanceOptions);
+//    CLIENTS[uID][0].send(JSON.stringify([CLIENTS[uID][2], CLIENTS[uID][1]]));
 }
 
 //checks for when the search has been completed, and then runs removeNonDupes();
-function checkAndExecuteSort(addrCount, uID){
+function checkAndExecuteSort(addrCount, uID, distanceOptions){
     runSearchCount++;
     console.log("in checkandexecutesort");
     if (runSearchCount == addrCount){
         runSearchCount = 0;
         console.log("final iteration, running removeNonDupes");
-        removeNonDupes(uID);
+        removeNonDupes(uID, distanceOptions);
     }
 }
 
 //runs google maps api's geocode function to grab the coordinates
-function runSearch(addr, search, distanceOptions, addrCount, uID){
+function runSearch(addr, search, distanceOptions, addrCount, uID, longToggle){
     //note: depending on keyword, the returned results may change slightly.
     //also, due to the 60 result limit, if more than 60 hits exist
     //possible candidates on the list will be truncated and the end result
@@ -214,12 +221,16 @@ function runSearch(addr, search, distanceOptions, addrCount, uID){
                 console.log("success in retrieving data from googlemapsclient");
                 
                 pushResponseToArray(response.json.results, uID);
-                if (response.json.next_page_token != null){
+                if (response.json.next_page_token != null && longToggle == true){
                     // console.log("starting recursesearch");
                     //must wait for google's servers to update its pagetokens
                     //2 sec appears to be the threshold. 1.5sec wait results in inconsistent
                     //results
-                    setTimeout(function(){runSearch2(addr, search, distanceOptions, addrCount, uID, response.json.next_page_token);}, 2000);
+                    if (longToggle == true){
+                        setTimeout(function(){runSearch2(addr, search, distanceOptions, addrCount, uID, response.json.next_page_token);}, 2000);
+                    }
+                }else {
+                    checkAndExecuteSort(addrCount, uID, distanceOptions);
                 }
             }
         }
@@ -243,8 +254,9 @@ function runSearch2(addr, search, distanceOptions, addrCount, uID, ptoken){
                 pushResponseToArray(response.json.results, uID);
                 if (response.json.next_page_token != null){
                     setTimeout(function(){runSearch3(addr, search, distanceOptions, addrCount, uID, response.json.next_page_token);}, 2000);
+                }else {
+                    checkAndExecuteSort(addrCount, uID, distanceOptions);
                 }
-                
             }
         }
     )
@@ -265,15 +277,14 @@ function runSearch3(addr, search, distanceOptions, addrCount, uID, ptoken){
                 console.log("success in retrieving data from googlemapsclient");
                 
                 pushResponseToArray(response.json.results, uID);
-                checkAndExecuteSort(addrCount, uID);
-                
             }
+            checkAndExecuteSort(addrCount, uID, distanceOptions);
             
         }
     )
 }
 
-function parseCoord(data, search, distanceOptions, uID){
+function parseCoord(data, search, distanceOptions, uID, longToggle){
     
     console.log("passing in data: " + data);
     // Geocode the two addresses.
@@ -294,7 +305,7 @@ function parseCoord(data, search, distanceOptions, uID){
                 //it needs-- else, addr1Coord may be undefined at run time
 
 
-                runSearch(addrCoord, search, distanceOptions, data.length, uID);
+                runSearch(addrCoord, search, distanceOptions, data.length, uID, longToggle);
             } else console.log("FAILURE to retrieve google maps data in parseCoord()");
         });
     }
